@@ -1,18 +1,23 @@
 const express = require('express')
 const router = express.Router()
 const bcrypt = require('bcrypt')
-const users = [];
+const User = require('../model/user')
+const jwt = require('jsonwebtoken')
 
 router.get('/landing', (req, res) => {
     res.render("landing.ejs")
 })
 
-router.get('/login', (req, res) => {
+router.get('/login', async (req, res) => {
     res.render("login.ejs")
 })
 
 router.get('/register', (req, res) => {
     res.render("register.ejs")
+})
+
+router.post('/login', async (req, res) => {
+    
 })
 
 router.post('/register', async (req, res) => {
@@ -21,17 +26,24 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password,salt)
     try
     {
-        users.push({
-            id: Date.now().toString(),
-            email: email,
-            password: hashedPassword,
-            qualification: qualification,
-            city: city,
-            contact:parseInt(contact)
-        })
-        console.log(users)
-        res.redirect('/api/login')
-
+        const existingUser = await User.findOne({email:email})
+        if (existingUser)
+        {
+            res.render("error.ejs")
+        }
+        else
+        {
+            const newUser = new User({
+                email: email,
+                password: hashedPassword,
+                qualification: qualification,
+                city: city,
+                contact:parseInt(contact)
+            })
+            const userAdded = await newUser.save()
+            console.log(userAdded)
+            res.redirect('/api/login')
+        }
     }
     catch (err)
     {
